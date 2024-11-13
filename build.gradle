@@ -1,0 +1,87 @@
+plugins {
+    id 'org.springframework.boot' version '3.3.5' apply false
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'checkstyle'
+    id 'org.sonarqube' version '5.1.0.4882'
+    id 'com.github.ben-manes.versions' version '0.51.0'
+    id 'jacoco'
+    id 'idea'
+    id 'java-library'
+}
+
+group = "io.github.zorin95670.spf"
+version = "1.0-SNAPSHOT"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.+"))
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    api("org.springframework.boot:spring-boot-starter-data-jpa")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    testCompileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
+
+    testImplementation(platform("org.junit:junit-bom:5.11.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testImplementation("com.h2database:h2:2.3.232")
+}
+
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file("${project.rootDir}/checkstyle.xml")
+    sourceSets = [sourceSets.main]
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+sonar {
+    properties {
+        property "sonar.projectKey", "Zorin95670_spring-query-filter"
+        property "sonar.organization", "zorin95670"
+        property "sonar.projectName", "spring-query-filter"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+        property "sonar.pitest.reportsDirectory", "build/reports/pitest"
+    }
+}
+
+tasks.withType(Jar).configureEach {
+    archiveBaseName.set("spring-query-filter")
+    archiveVersion.set(project.version.toString())
+    manifest {
+        attributes(
+                "Implementation-Title": "Spring Query Filter",
+                "Implementation-Version": project.version.toString()
+        )
+    }
+}
+
