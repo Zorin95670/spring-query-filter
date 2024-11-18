@@ -6,4 +6,19 @@
             <password>${env.MAVEN_PASSWORD}</password>
         </server>
     </servers>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <properties>
+                <gpg.executable>gpg</gpg.executable>
+                <gpg.keyname>A6E7E83E31E90AC82959A3978DFEFD97CDD10A72</gpg.keyname>
+                <gpg.passphrase>${env.GPG_PASSWORD}</gpg.passphrase>
+            </properties>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>release</activeProfile>
+    </activeProfiles>
 </settings>

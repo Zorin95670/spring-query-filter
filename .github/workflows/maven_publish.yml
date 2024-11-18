@@ -19,6 +19,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Import GPG Key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
+          echo "no-tty" >> ~/.gnupg/gpg.conf
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
       - name: Cache Maven dependencies
         uses: actions/cache@v2
         with:
@@ -32,3 +39,4 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
