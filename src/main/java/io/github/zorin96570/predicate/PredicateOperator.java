@@ -21,7 +21,7 @@ public enum PredicateOperator {
     EQUALS("eq_"),
 
     /**
-     * Represents the "less than" operator (`<`) for filtering values.
+     * Represents the "less than" operator (`&gt;`) for filtering values.
      * <p>
      * The value associated with this operator is {@code "lt_"}.
      * </p>
@@ -29,7 +29,7 @@ public enum PredicateOperator {
     INFERIOR("lt_"),
 
     /**
-     * Represents the "greater than" operator (`>`) for filtering values.
+     * Represents the "greater than" operator (`&lt;`) for filtering values.
      * <p>
      * The value associated with this operator is {@code "gt_"}.
      * </p>

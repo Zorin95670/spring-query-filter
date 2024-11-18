@@ -13,13 +13,13 @@ import jakarta.persistence.criteria.Predicate;
  * </p>
  * <p>
  * This class provides specialized handling of comparison operators, including:
+ * </p>
  * <ul>
  *     <li>{@link PredicateOperator#EQUALS}</li>
  *     <li>{@link PredicateOperator#INFERIOR} (less than)</li>
  *     <li>{@link PredicateOperator#SUPERIOR} (greater than)</li>
  *     <li>{@link PredicateOperator#BETWEEN}</li>
  * </ul>
- * </p>
  *
  * @param <T> the type of the entity being queried
  * @param <Y> the type of the field being filtered, which must extend {@link Comparable}
@@ -49,6 +49,7 @@ public abstract class ComparablePredicateFilter<T, Y extends Comparable<Y>> exte
      * </p>
      * <p>
      * The method will:
+     * </p>
      * <ul>
      *     <li>Set the operator to {@link PredicateOperator#INFERIOR} if the value starts with
      *     the "less than" symbol.</li>
@@ -56,7 +57,6 @@ public abstract class ComparablePredicateFilter<T, Y extends Comparable<Y>> exte
      *     the "greater than" symbol.</li>
      *     <li>Set the operator to {@link PredicateOperator#BETWEEN} if the value contains the keyword "BETWEEN".</li>
      * </ul>
-     * </p>
      * <p>
      * Additionally, when setting the operator to {@link PredicateOperator#INFERIOR} or
      * {@link PredicateOperator#SUPERIOR},
