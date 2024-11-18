@@ -167,6 +167,18 @@
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>5.0.0.4389</version>
             </plugin>
+
+            <!-- Maven publisher -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.6.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <waitUntil>published</waitUntil>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
