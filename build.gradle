@@ -10,7 +10,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = "io.github.zorin95670.spf"
+group = "io.github.zorin95670"
 version = "1.0-SNAPSHOT"
 
 publishing {
@@ -107,12 +107,45 @@ jacocoTestReport {
 
 sonar {
     properties {
-        property "sonar.projectKey", "${project.group}_${project.name}"
+        property "sonar.projectKey", "Zorin95670_${project.name}"
         property "sonar.organization", "zorin95670"
         property "sonar.projectName", "spring-query-filter"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
         property "sonar.pitest.reportsDirectory", "build/reports/pitest"
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    archiveClassifier.set('sources') // This will give the JAR the classifier '-sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc.destinationDir
+    archiveClassifier.set('javadoc') // This will give the JAR the classifier '-javadoc'
+    dependsOn tasks.javadoc // Ensure javadoc runs before javadocJar
+}
+
+task generatePom {
+    dependsOn 'publishMavenJavaPublicationToMavenLocal'
+
+    doLast {
+        def pomFile = file("${layout.buildDirectory.get().asFile}/libs/${project.name}-${version}.pom")
+        println "POM generated at: ${pomFile}"
+    }
+}
+
+tasks.javadoc {
+    source = sourceSets.main.allJava
+    destinationDir = file("${layout.buildDirectory.get().asFile}/docs/javadoc")
+    classpath = sourceSets.main.compileClasspath
+
+    options {
+        author = true
+        version = true
+        encoding = 'UTF-8'
+        charSet = 'UTF-8'
     }
 }
 
@@ -127,3 +160,14 @@ tasks.withType(Jar).configureEach {
     }
 }
 
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+tasks.build {
+    dependsOn tasks.jar
+    dependsOn tasks.javadoc
+    dependsOn sourcesJar, javadocJar
+    finalizedBy generatePom
+}
