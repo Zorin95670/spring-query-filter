@@ -186,8 +186,9 @@
                 <version>3.11.1</version>
                 <executions>
                     <execution>
+                        <phase>verify</phase>
                         <goals>
-                            <goal>javadoc</goal>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -199,10 +200,11 @@
                 <version>3.3.1</version>
                 <executions>
                     <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
                         <goals>
-                            <goal>attach-sources</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
-                        <phase>deploy</phase>
                     </execution>
                 </executions>
             </plugin>

@@ -21,7 +21,7 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --no-tty --import
           echo "no-tty" >> ~/.gnupg/gpg.conf
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
