@@ -16,18 +16,6 @@ import java.lang.annotation.Target;
  * The `type` attribute specifies the type of the filter, which can be used for processing the filter values
  * dynamically.
  * </p>
- *
- * Example usage:
- * <pre>
- * public class MyEntity {
- *
- *     @FilterType(type = String.class)
- *     private String name;
- *
- *     @FilterType(type = Integer.class)
- *     private Integer age;
- * }
- * </pre>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
