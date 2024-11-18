@@ -16,7 +16,7 @@ This Java library directly converts HTTP query parameters into Hibernate predica
 
 ```xml
 <dependency>
-    <groupId>io.github.zorin96570</groupId>
+    <groupId>io.github.zorin95670</groupId>
     <artifactId>spring-query-filter</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -26,7 +26,7 @@ This Java library directly converts HTTP query parameters into Hibernate predica
 
 ```groovy
 dependencies {
-    implementation("io.github.zorin96570:spring-query-filter:1.0.0")
+    implementation("io.github.zorin95670:spring-query-filter:1.0.0")
 }
 ```
 
@@ -129,7 +129,7 @@ To enable filtering on a field, annotate it with `@FilterType`.
 **Example Entity:**
 
 ```java
-import io.github.zorin96570.predicate.FilterType;
+import io.github.zorin95670.predicate.FilterType;
 (...)
 
 @Entity
@@ -148,7 +148,7 @@ public class YourEntity {
 ### Retrieving Query Parameters in a Controller
 
 ```java
-import io.github.zorin96570.query.SpringQueryFilter;
+import io.github.zorin95670.query.SpringQueryFilter;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
