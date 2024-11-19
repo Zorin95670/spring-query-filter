@@ -1,7 +1,5 @@
 package io.github.zorin95670.predicate;
 
-import lombok.Getter;
-
 /**
  * Enum representing different predicate operators used for query filtering.
  * <p>
@@ -79,8 +77,16 @@ public enum PredicateOperator {
     /**
      * Operator value.
      */
-    @Getter
     private final String value;
+
+    /**
+     * Gets the operator value.
+     *
+     * @return the operator value.
+     */
+    public String getValue() {
+        return value;
+    }
 
     /**
      * Constructor to assign the string value to each operator.

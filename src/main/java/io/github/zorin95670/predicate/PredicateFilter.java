@@ -5,8 +5,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -34,8 +32,6 @@ public abstract class PredicateFilter<T, Y> implements IPredicateFilter<T, Y> {
     /**
      * The name of the query parameter, representing the field to filter.
      */
-    @Getter
-    @Setter
     private String name;
 
     /**
@@ -74,6 +70,24 @@ public abstract class PredicateFilter<T, Y> implements IPredicateFilter<T, Y> {
      */
     public void setIsNotOperator(final int index, final boolean state) {
         this.isNotOperators[index] = state;
+    }
+
+    /**
+     * Gets the name of the query parameter.
+     *
+     * @return the name of the query parameter
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Sets the name of the query parameter.
+     *
+     * @param name the name of the query parameter
+     */
+    public void setName(final String name) {
+        this.name = name;
     }
 
     /**

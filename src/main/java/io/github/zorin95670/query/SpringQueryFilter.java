@@ -1,16 +1,11 @@
 package io.github.zorin95670.query;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-
 import java.util.Optional;
 
 /**
  * Class implementing {@link ISpringQueryFilter} for managing pagination and sorting parameters in a Spring application.
  * This class provides default values for pagination and handles sorting direction based on the `sort` field.
  */
-@NoArgsConstructor
-@AllArgsConstructor
 public class SpringQueryFilter implements ISpringQueryFilter {
 
     /**
@@ -31,22 +26,43 @@ public class SpringQueryFilter implements ISpringQueryFilter {
     /**
      * Page number for pagination (0-based index). Defaults to 0 if not specified.
      */
-    private Integer page = 0;
+    protected Integer page = 0;
 
     /**
      * Number of records per page. Defaults to 1 if not specified.
      */
-    private Integer pageSize = 1;
+    protected Integer pageSize = 1;
 
     /**
      * Field name by which results should be ordered. Can be set to null.
      */
-    private String order;
+    protected String order;
 
     /**
      * Sorting direction. Should be "asc" for ascending order; any other value is treated as descending.
      */
-    private String sort;
+    protected String sort;
+
+    /**
+     * Default no-argument constructor.
+     */
+    public SpringQueryFilter() {
+    }
+
+    /**
+     * Constructor to initialize all properties.
+     *
+     * @param page     the page number (0-based index).
+     * @param pageSize the number of records per page.
+     * @param order    the field name by which results should be ordered.
+     * @param sort     the sorting direction (ascending or descending).
+     */
+    public SpringQueryFilter(Integer page, Integer pageSize, String order, String sort) {
+        this.page = page;
+        this.pageSize = pageSize;
+        this.order = order;
+        this.sort = sort;
+    }
 
     /**
      * Retrieves the page number for pagination, defaulting to 0 if the page is null or less than 0.
