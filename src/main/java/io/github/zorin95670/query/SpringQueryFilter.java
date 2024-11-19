@@ -26,22 +26,22 @@ public class SpringQueryFilter implements ISpringQueryFilter {
     /**
      * Page number for pagination (0-based index). Defaults to 0 if not specified.
      */
-    protected Integer page = 0;
+    private Integer page = 0;
 
     /**
      * Number of records per page. Defaults to 1 if not specified.
      */
-    protected Integer pageSize = 1;
+    private Integer pageSize = 1;
 
     /**
      * Field name by which results should be ordered. Can be set to null.
      */
-    protected String order;
+    private String order = null;
 
     /**
      * Sorting direction. Should be "asc" for ascending order; any other value is treated as descending.
      */
-    protected String sort;
+    private String sort = null;
 
     /**
      * Default no-argument constructor.
@@ -57,11 +57,51 @@ public class SpringQueryFilter implements ISpringQueryFilter {
      * @param order    the field name by which results should be ordered.
      * @param sort     the sorting direction (ascending or descending).
      */
-    public SpringQueryFilter(Integer page, Integer pageSize, String order, String sort) {
+    public SpringQueryFilter(final Integer page, final Integer pageSize, final String order, final String sort) {
         this.page = page;
         this.pageSize = pageSize;
         this.order = order;
         this.sort = sort;
+    }
+
+    /**
+     * Returns the page number for pagination (0-based index).
+     * Defaults to 0 if not specified.
+     *
+     * @return the page number (0-based index)
+     */
+    public Integer getPage() {
+        return page;
+    }
+
+    /**
+     * Returns the number of records per page.
+     * Defaults to 1 if not specified.
+     *
+     * @return the number of records per page
+     */
+    public Integer getPageSize() {
+        return pageSize;
+    }
+
+    /**
+     * Returns the field name by which results should be ordered.
+     * Can be set to null.
+     *
+     * @return the field name for ordering, or null if not specified
+     */
+    public String getOrder() {
+        return order;
+    }
+
+    /**
+     * Returns the sorting direction.
+     * Should be "asc" for ascending order; any other value is treated as descending.
+     *
+     * @return the sorting direction, either "asc" for ascending or any other value for descending
+     */
+    public String getSort() {
+        return sort;
     }
 
     /**
@@ -70,8 +110,8 @@ public class SpringQueryFilter implements ISpringQueryFilter {
      * @return the page number, constrained to be non-negative.
      */
     @Override
-    public int getPage() {
-        return Math.max(Optional.ofNullable(page).orElse(0), 0);
+    public int getComputedPage() {
+        return Math.max(Optional.ofNullable(getPage()).orElse(0), 0);
     }
 
     /**
@@ -81,18 +121,8 @@ public class SpringQueryFilter implements ISpringQueryFilter {
      * @return the page size, bounded by a minimum of 1 and a maximum of 10.
      */
     @Override
-    public int getPageSize() {
-        return Math.clamp(Optional.ofNullable(pageSize).orElse(DEFAULT_PAGE_SIZE), MIN_PAGE_SIZE, MAX_PAGE_SIZE);
-    }
-
-    /**
-     * Retrieves the field name by which results should be ordered.
-     *
-     * @return the order field, or null if not set.
-     */
-    @Override
-    public String getOrder() {
-        return this.order;
+    public int getComputedPageSize() {
+        return Math.clamp(Optional.ofNullable(getPageSize()).orElse(DEFAULT_PAGE_SIZE), MIN_PAGE_SIZE, MAX_PAGE_SIZE);
     }
 
     /**
@@ -102,6 +132,6 @@ public class SpringQueryFilter implements ISpringQueryFilter {
      */
     @Override
     public boolean isAscendantSort() {
-        return "asc".equalsIgnoreCase(sort);
+        return "asc".equalsIgnoreCase(getSort());
     }
 }

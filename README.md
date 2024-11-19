@@ -261,12 +261,12 @@ public class SpringQueryFilter implements ISpringQueryFilter {
     private String sort;
 
     @Override
-    public int getPage() {
+    public int getComputedPage() {
         return Math.max(Optional.ofNullable(page).orElse(0), 0);
     }
     
     @Override
-    public int getPageSize() {
+    public int getComputedSize() {
         return Math.clamp(Optional.ofNullable(pageSize).orElse(DEFAULT_PAGE_SIZE), MIN_PAGE_SIZE, MAX_PAGE_SIZE);
     }
 

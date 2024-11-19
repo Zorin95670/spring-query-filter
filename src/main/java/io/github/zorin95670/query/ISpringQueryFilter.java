@@ -19,14 +19,14 @@ public interface ISpringQueryFilter {
      *
      * @return the page number (0-based index).
      */
-    int getPage();
+    int getComputedPage();
 
     /**
      * Retrieves the page size for pagination.
      *
      * @return the number of records per page.
      */
-    int getPageSize();
+    int getComputedPageSize();
 
     /**
      * Retrieves the field by which results should be ordered.
@@ -81,9 +81,9 @@ public interface ISpringQueryFilter {
         Sort sort = this.getOrderBy(defaultOrder);
 
         if (sort != null) {
-            return PageRequest.of(this.getPage(), this.getPageSize(), sort);
+            return PageRequest.of(this.getComputedPage(), this.getComputedPageSize(), sort);
         }
 
-        return PageRequest.of(this.getPage(), this.getPageSize());
+        return PageRequest.of(this.getComputedPage(), this.getComputedPageSize());
     }
 }
