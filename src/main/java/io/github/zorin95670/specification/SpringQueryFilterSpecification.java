@@ -15,8 +15,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.lang.reflect.Field;
@@ -49,8 +47,7 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
      * This map is used to dynamically build the filtering predicates based on the provided values for each field.
      * </p>
      */
-    @Setter
-    private Map<String, List<String>> filters;
+    private final Map<String, List<String>> filters;
 
     /**
      * The class of the entity to filter.
@@ -58,9 +55,7 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
      * This class is used to reflect on the fields of the entity and apply filters accordingly.
      * </p>
      */
-    @Getter
-    @Setter
-    private Class<T> entityClass;
+    private final Class<T> entityClass;
 
     /**
      * Constructs a new specification with the provided entity class and filters.
@@ -69,8 +64,26 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
      * @param filters The map of filters for field names and values.
      */
     public SpringQueryFilterSpecification(final Class<T> entityClass, final Map<String, List<String>> filters) {
-        setEntityClass(entityClass);
-        setFilters(filters);
+        this.entityClass = entityClass;
+        this.filters = filters;
+    }
+
+    /**
+     * Gets the map of filters.
+     *
+     * @return the map of filters
+     */
+    public Map<String, List<String>> getFilters() {
+        return filters;
+    }
+
+    /**
+     * Gets the class of the entity to filter.
+     *
+     * @return the class of the entity
+     */
+    public Class<T> getEntityClass() {
+        return entityClass;
     }
 
     /**

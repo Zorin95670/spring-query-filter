@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import javax.swing.text.html.parser.Entity;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,7 +48,7 @@ class SpringQueryFilterSpecificationTest {
     @Test
     @DisplayName("Test getPredicateFilter: should return valid Predicate")
     void testGetPredicateFilter() {
-        var specification = new SpringQueryFilterSpecification<>(Entity.class, new HashMap<>());
+        var specification = new SpringQueryFilterSpecification<>(MyEntity.class, new HashMap<>());
 
         assertEquals(StringPredicateFilter.class, specification.getPredicateFilter(String.class, "name", "value").getClass());
         assertEquals(DatePredicateFilter.class, specification.getPredicateFilter(Date.class, "name", "value").getClass());
@@ -64,7 +63,7 @@ class SpringQueryFilterSpecificationTest {
     @Test
     @DisplayName("Test getPredicateFilter: should throw exception on unknown type")
     void testGetPredicateFilterThrowException() {
-        var specification = new SpringQueryFilterSpecification<>(Entity.class, new HashMap<>());
+        var specification = new SpringQueryFilterSpecification<>(MyEntity.class, new HashMap<>());
 
         SpringQueryFilterException exception = null;
 

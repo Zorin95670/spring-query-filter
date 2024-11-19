@@ -1,8 +1,5 @@
 package io.github.zorin95670.exception;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 /**
  * Exception thrown to indicate an error occurred while processing query filters in the Spring Query Filter library.
  * Provides additional details about the filter type, query parameter name, and the associated value,
@@ -11,8 +8,6 @@ import lombok.EqualsAndHashCode;
  * Extends {@link RuntimeException}, allowing users to handle or propagate this exception as needed.
  * </p>
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
 public class SpringQueryFilterException extends RuntimeException {
 
     /**
@@ -97,5 +92,32 @@ public class SpringQueryFilterException extends RuntimeException {
         this.queryFilterType = queryFilterType;
         this.queryParameterName = queryParameterName;
         this.queryParameterValue = queryParameterValue;
+    }
+
+    /**
+     * Gets the query filter type that caused the exception.
+     *
+     * @return the query filter type
+     */
+    public String getQueryFilterType() {
+        return queryFilterType;
+    }
+
+    /**
+     * Gets the query parameter name that caused the exception.
+     *
+     * @return the query parameter name
+     */
+    public String getQueryParameterName() {
+        return queryParameterName;
+    }
+
+    /**
+     * Gets the query parameter value that caused the exception.
+     *
+     * @return the query parameter value
+     */
+    public String getQueryParameterValue() {
+        return queryParameterValue;
     }
 }
