@@ -36,7 +36,7 @@ public abstract class ComparablePredicateFilter<T, Y extends Comparable<Y>> exte
      * @param name the name of the field being filtered
      * @param value the value(s) used for filtering, typically passed from query parameters
      */
-    ComparablePredicateFilter(final String name, final String value) {
+    public ComparablePredicateFilter(final String name, final String value) {
         super(name, value);
     }
 
