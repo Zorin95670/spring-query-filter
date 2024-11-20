@@ -45,7 +45,7 @@ public abstract class PredicateFilter<T, Y> implements IPredicateFilter<T, Y> {
      * @param name the name of the field to filter
      * @param value the raw value of the query parameter
      */
-    PredicateFilter(final String name, final String value) {
+    public PredicateFilter(final String name, final String value) {
         this.setName(name);
         this.setValues(value);
         this.operators = new PredicateOperator[this.getValues().length];
