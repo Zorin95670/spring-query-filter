@@ -34,16 +34,61 @@ dependencies {
 
 ### Pagination Parameters
 
+Use default pagination from Spring.
+
 The following query parameters manage pagination options:
 - `page`: Integer starting at 0, representing the desired page.
-- `pageSize`: Integer from 1 to 100, representing the number of elements per page. Defaults to 10.
-- `order`: Field name to sort by.
-- `sort`: Sort direction, either asc (ascending) or desc (descending). Defaults to descending.
+- `size`: Integer from 1 to 100, representing the number of elements per page. Defaults to 10.
+- `sort`: Field name to sort by.
+- `direction`: Sort direction, either asc (ascending) or desc (descending). Defaults to descending.
 
 **Example:**
 
 ```text
 http://localhost:8080/myEndpoint?page=2&pageSize=7&order=name&sort=asc
+```
+
+You can use `sort` parameter for multiples sort:
+
+**Example:**
+
+```text
+http://localhost:8080/myEndpoint?sort=name,asc&sort=price,desc
+```
+
+Here’s an improved version of your documentation section in English:
+
+---
+
+## Usage in HTTP Requests
+
+### Pagination Parameters
+
+The library uses Spring's default pagination mechanism to manage paginated responses.
+
+You can control pagination through the following query parameters:
+
+- **`page`**: Specifies the zero-based page index to retrieve. Defaults to `0` if not provided.
+- **`size`**: Specifies the number of elements per page. Must be between `1` and `100`, with a default of `10`.
+- **`sort`**: Specifies the field(s) by which to sort the results.
+- **`direction`**: Specifies the sorting direction. Acceptable values are `asc` (ascending) or `desc` (descending). Defaults to `desc`.
+
+#### Examples
+
+**Single Sort**
+
+To fetch the second page with 7 elements per page, sorted by `name` in ascending order:
+
+```text
+GET http://localhost:8080/myEndpoint?page=1&size=7&sort=name,asc
+```
+
+**Multiple Sort Criteria**
+
+To sort by multiple fields, chain `sort` parameters. For example, to sort by `name` in ascending order and then by `price` in descending order:
+
+```text
+GET http://localhost:8080/myEndpoint?sort=name,asc&sort=price,desc
 ```
 
 ### Filtering Operators
@@ -162,7 +207,7 @@ public class ExampleController {
 
     @GetMapping("/myEndpoint")
     public Page<MyEntity> find(@RequestParam Map<String, List<String>> allParams,
-                               @ModelAttribute SpringQueryFilter queryFilter) {
+                               @PageableDefault(page = 0, size = 10, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable) {
         return myService.find(allParams, queryFilter);
     }
 }
@@ -185,7 +230,7 @@ public interface YourEntityRepository extends JpaRepository<YourEntity, Long> {
 public interface YourEntityService {
     (...)
     
-    Page<YourEntity> find(Map<String, List<String>> filters, SpringQueryFilter queryFilter);
+    Page<YourEntity> find(Map<String, List<String>> filters, Pageable pageable);
 }
 ```
 
@@ -199,18 +244,13 @@ public class YourEntityServiceImpl implements YourEntityService {
 
     @Override
     public Page<YourEntity> find(final Map<String, List<String>> filters,
-                                 final SpringQueryFilter queryFilter) {
+                                 final Pageable pageable) {
         return this.yourEntityRepository.find(
                 new QueryFilterSpecification<>(YourEntity.class, filters),
-                queryFilter.getPageable() // or queryFilter.getPageable("name") to apply a default order.
+                pageable
         );
     }
 }
-```
-
-You can define default sort in your service by using:
-```java
-queryFilter.getPageable("name");
 ```
 
 ### Filter without queryParameters
@@ -237,53 +277,11 @@ public class YourEntityServiceImpl implements YourEntityService {
 
         return this.yourEntityRepository.find(
                 new QueryFilterSpecification<>(YourEntity.class, filters),
-                // Current page, limit, field to order and sort
-                new SpringQueryFilter(0, 10, "name", "asc").getPageable()
+                PageRequest.of(0, 10, Sort.by(Sort.Order.asc("name")))
         );
     }
 }
 ```
-## Custom Pagination Options
-
-If you need specific pagination settings, implement `ISpringQueryFilter` to define your own minimum, maximum, sort values, or any other pagination-related configurations.
-
-```java
-@NoArgsConstructor
-@AllArgsConstructor
-public class SpringQueryFilter implements ISpringQueryFilter {
-
-    private static final int DEFAULT_PAGE_SIZE = 1;
-    private static final int MIN_PAGE_SIZE = 1;
-    private static final int MAX_PAGE_SIZE = 10;
-    private Integer page = 0;
-    private Integer pageSize = 1;
-    private String order;
-    private String sort;
-
-    @Override
-    public int getComputedPage() {
-        return Math.max(Optional.ofNullable(page).orElse(0), 0);
-    }
-    
-    @Override
-    public int getComputedSize() {
-        return Math.clamp(Optional.ofNullable(pageSize).orElse(DEFAULT_PAGE_SIZE), MIN_PAGE_SIZE, MAX_PAGE_SIZE);
-    }
-
-    @Override
-    public String getOrder() {
-        return this.order;
-    }
-
-
-    @Override
-    public boolean isAscendantSort() {
-        return "asc".equalsIgnoreCase(sort);
-    }
-}
-```
-
-This configuration allows you to control the min, max, sort values, and create a customized pageable option name in query parameters.
 
 ## Custom Types
 

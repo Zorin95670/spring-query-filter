@@ -9,11 +9,12 @@ import io.github.zorin95670.predicate.IntegerPredicateFilter;
 import io.github.zorin95670.predicate.LongPredicateFilter;
 import io.github.zorin95670.predicate.StringPredicateFilter;
 import io.github.zorin95670.predicate.UUIDPredicateFilter;
-import io.github.zorin95670.query.SpringQueryFilter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.sql.Timestamp;
 import java.util.Date;
@@ -87,7 +88,7 @@ class SpringQueryFilterSpecificationTest {
         repository.deleteAll();
 
         Map<String, List<String>> filters = new HashMap<>();
-        var pagination = new SpringQueryFilter(0, 10, "text", "asc");
+        var pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("text")));
 
         UUID uuid1 = UUID.randomUUID();
         MyEntity entity1 = createEntity(1, uuid1);
@@ -98,7 +99,7 @@ class SpringQueryFilterSpecificationTest {
         entity2 = repository.save(entity2);
 
         List<MyEntity> entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
 
         assertNotNull(entities);
         assertEquals(2, entities.size());
@@ -107,7 +108,7 @@ class SpringQueryFilterSpecificationTest {
 
         filters.put("id", List.of());
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
 
         assertNotNull(entities);
         assertEquals(2, entities.size());
@@ -136,28 +137,31 @@ class SpringQueryFilterSpecificationTest {
 
         Map<String, List<String>> filters = new HashMap<>();
         filters.put("uuid", List.of(uuid1.toString()));
-        var pagination = new SpringQueryFilter(0, 2, null, "asc");
+
+        var pageable = PageRequest.of(0, 2);
+
         List<MyEntity> entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity1, entities.getFirst());
 
-        pagination = new SpringQueryFilter(0, 2, "id", "desc");
+
+        pageable = PageRequest.of(0, 2, Sort.by(Sort.Order.desc("id")));
         filters = new HashMap<>();
         filters.put("uuid", List.of(uuid1 + "|" + uuid2 + "|" + uuid3));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(2, entities.size());
         assertEquals(entity3, entities.getFirst());
         assertEquals(entity2, entities.getLast());
 
-        pagination = new SpringQueryFilter(1, 2, "id", "desc");
+        pageable = PageRequest.of(1, 2, Sort.by(Sort.Order.desc("id")));
         filters = new HashMap<>();
         filters.put("uuid", List.of(uuid1 + "|" + uuid2 + "|" + uuid3));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity1, entities.getFirst());
@@ -182,12 +186,12 @@ class SpringQueryFilterSpecificationTest {
         entity3.setText(null);
         entity3 = repository.save(entity3);
 
-        var pagination = new SpringQueryFilter(0, 10, "text", "asc");
+        var pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("text")));
 
         Map<String, List<String>> filters = new HashMap<>();
         filters.put("id", List.of("2"));
         List<MyEntity> entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -195,7 +199,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("text", List.of("text2"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -203,7 +207,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("date", List.of("20"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -211,7 +215,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("uuid", List.of(uuid2.toString()));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -219,7 +223,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("numberInteger", List.of("200"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -227,7 +231,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("numberFloat", List.of("2000.2"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -235,7 +239,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("numberDouble", List.of("eq_20000.2"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -243,7 +247,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("id", List.of("not_2", "not_3"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity1, entities.getFirst());
@@ -252,7 +256,7 @@ class SpringQueryFilterSpecificationTest {
         filters.put("id", List.of("not_1"));
         filters.put("text", List.of("null"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity3, entities.getFirst());
@@ -260,7 +264,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("text", List.of("not_null"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -268,7 +272,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("id", List.of("lt_2", "gt_0"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity1, entities.getFirst());
@@ -276,7 +280,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("id", List.of("0_bt_1"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity1, entities.getFirst());
@@ -284,7 +288,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("text", List.of("not_lk_*4", "lk_*2"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
@@ -292,7 +296,7 @@ class SpringQueryFilterSpecificationTest {
         filters = new HashMap<>();
         filters.put("id", List.of("1|2"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(2, entities.size());
         assertEquals(entity1, entities.getFirst());
@@ -300,7 +304,7 @@ class SpringQueryFilterSpecificationTest {
 
         filters.put("text", List.of("text2", "not_text1"));
         entities = repository
-                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pagination.getPageable());
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
         assertNotNull(entities);
         assertEquals(1, entities.size());
         assertEquals(entity2, entities.getFirst());
