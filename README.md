@@ -73,6 +73,27 @@ You can control pagination through the following query parameters:
 - **`sort`**: Specifies the field(s) by which to sort the results.
 - **`direction`**: Specifies the sorting direction. Acceptable values are `asc` (ascending) or `desc` (descending). Defaults to `desc`.
 
+### Date Format
+
+By default, filtering dates will use a timestamp. However, you can specify a custom date format by including the `dateFormat` parameter in your request.
+
+**Example Request:**
+
+```http
+GET http://localhost:8080/myEndpoint?dateFormat=yyyyMMdd&date=20241201
+```
+
+**Notes:**
+- The `dateFormat` parameter defines the expected format of the `date` value in the request.
+- For valid date format patterns, refer to the [Java DateFormat documentation](https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html).
+
+**Examples of Supported Formats:**
+- `yyyyMMdd` → `20241201`
+- `MM/dd/yyyy` → `12/01/2024`
+- `dd-MM-yyyy` → `01-12-2024`
+
+Make sure the date value matches the specified `dateFormat` to avoid parsing errors.
+
 #### Examples
 
 **Single Sort**
@@ -105,13 +126,13 @@ Here is the list of operator that can be used to filter data:
 | Type    | `eq_`               | `gt_`              | `lt_`              | `_bt_`             | `lk_`              |
 |---------|---------------------|--------------------|--------------------|--------------------|--------------------|
 | Boolean | :white_check_mark:  | :x:                | :x:                | :x:                | :x:                |
+| UUID    | :white_check_mark:  | :x:                | :x:                | :x:                | :x:                |
 | String  | :white_check_mark:  | :x:                | :x:                | :x:                | :white_check_mark: |
 | Integer | :white_check_mark:  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | Long    | :white_check_mark:  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | Float   | :white_check_mark:  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | Double  | :white_check_mark:  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | Date    | :white_check_mark:  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
-| UUID    | :white_check_mark:  | :x:                | :x:                | :x:                | :x:                |
 
 
 ### Basic Filtering Example
@@ -352,6 +373,30 @@ public class CustomQueryFilterSpecification<T> extends QueryFilterSpecification<
 
     public CustomQueryFilterSpecification(Class<T> entityClass, Map<String, List<String>> filters) {
         super(entityClass, filters);
+    }
+
+    @Override
+    public IPredicateFilter<T, ?> getPredicateFilter(final Class<?> type, final String name, final String value) {
+        if (Yourtype.class.equals(type)) {
+            return new YourTypePredicateFilter<>(name, value);
+        }
+        
+        // To manage default type
+        return super.getPredicateFilter(type, name, value);
+    }
+}
+```
+
+You can specify a custom field name for the date format by overriding the behavior in your `CustomQueryFilterSpecification`.
+
+Here's an example implementation:
+
+```java
+public class CustomQueryFilterSpecification<T> extends QueryFilterSpecification<T> {
+
+    public CustomQueryFilterSpecification(Class<T> entityClass, Map<String, List<String>> filters) {
+        super(entityClass, filters);
+        this.setDateFormatFieldName("dateFormat");
     }
 
     @Override
