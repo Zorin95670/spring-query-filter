@@ -17,6 +17,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -310,4 +312,32 @@ class SpringQueryFilterSpecificationTest {
         assertEquals(entity2, entities.getFirst());
     }
 
+    @Test
+    @DisplayName("should return all entities with specific date format")
+    void testShouldReturnAllEntitiesWithDateFormat() throws ParseException {
+        repository.deleteAll();
+
+        var sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Map<String, List<String>> filters = new HashMap<>();
+        var pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("text")));
+
+        UUID uuid1 = UUID.randomUUID();
+        MyEntity entity1 = createEntity(1, uuid1);
+        entity1.setDate(sdf.parse("2024-01-01"));
+        entity1 = repository.save(entity1);
+
+        UUID uuid2 = UUID.randomUUID();
+        MyEntity entity2 = createEntity(2, uuid2);
+        entity2.setDate(sdf.parse("2024-02-2"));
+        entity2 = repository.save(entity2);
+
+        filters.put("dateFormat", List.of("yyyy-MM-dd"));
+        filters.put("date", List.of("2024-01-01"));
+        List<MyEntity> entities = repository
+                .findAll(new SpringQueryFilterSpecification<>(MyEntity.class, filters), pageable);
+
+        assertNotNull(entities);
+        assertEquals(1, entities.size());
+        assertEquals(entity1, entities.getFirst());
+    }
 }

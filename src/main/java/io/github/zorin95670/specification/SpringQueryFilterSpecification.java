@@ -58,6 +58,12 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
     private final Class<T> entityClass;
 
     /**
+     * Field name representing the date format parameter in the query.
+     * Default value is "dateFormat".
+     */
+    private String dateFormatFieldName = "dateFormat";
+
+    /**
      * Constructs a new specification with the provided entity class and filters.
      *
      * @param entityClass The entity class to apply the specification to.
@@ -84,6 +90,25 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
      */
     public Class<T> getEntityClass() {
         return entityClass;
+    }
+
+    /**
+     * Retrieves the name of the field used for specifying the date format in the query.
+     *
+     * @return the field name for the date format parameter.
+     */
+    public String getDateFormatFieldName() {
+        return dateFormatFieldName;
+    }
+
+    /**
+     * Sets the field name to be used for specifying the date format in the query.
+     *
+     * @param dateFormatFieldName the new field name for the date format parameter.
+     *                            Must not be {@code null}.
+     */
+    public void setDateFormatFieldName(final String dateFormatFieldName) {
+        this.dateFormatFieldName = dateFormatFieldName;
     }
 
     /**
@@ -122,6 +147,10 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
         }
 
         if (Date.class.equals(type)) {
+            if (filters.containsKey(getDateFormatFieldName()) && !filters.get(getDateFormatFieldName()).isEmpty()) {
+                return new DatePredicateFilter<>(name, value, filters.get(getDateFormatFieldName()).getFirst());
+            }
+
             return new DatePredicateFilter<>(name, value);
         }
 
