@@ -18,7 +18,7 @@ This Java library directly converts HTTP query parameters into Hibernate predica
 <dependency>
     <groupId>io.github.zorin95670</groupId>
     <artifactId>spring-query-filter</artifactId>
-    <version>1.1.3</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -26,7 +26,7 @@ This Java library directly converts HTTP query parameters into Hibernate predica
 
 ```groovy
 dependencies {
-    implementation("io.github.zorin95670:spring-query-filter:1.1.3")
+    implementation("io.github.zorin95670:spring-query-filter:1.2.0")
 }
 ```
 
