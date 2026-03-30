@@ -11,13 +11,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v5
         with:
-          java-version: '21'
           distribution: 'temurin'
+          java-version: '21'
 
       - name: Import GPG Key
         run: |
@@ -25,14 +27,6 @@ jobs:
           echo "no-tty" >> ~/.gnupg/gpg.conf
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
 
       - name: Build and publish to Maven Central
         run: mvn clean deploy -P release -DskipTests -s .github/maven-settings.xml
