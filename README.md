@@ -30,36 +30,6 @@ dependencies {
 }
 ```
 
-## Usage in HTTP requests
-
-### Pagination Parameters
-
-Use default pagination from Spring.
-
-The following query parameters manage pagination options:
-- `page`: Integer starting at 0, representing the desired page.
-- `size`: Integer from 1 to 100, representing the number of elements per page. Defaults to 10.
-- `sort`: Field name to sort by.
-- `direction`: Sort direction, either asc (ascending) or desc (descending). Defaults to descending.
-
-**Example:**
-
-```text
-http://localhost:8080/myEndpoint?page=2&pageSize=7&order=name&sort=asc
-```
-
-You can use `sort` parameter for multiples sort:
-
-**Example:**
-
-```text
-http://localhost:8080/myEndpoint?sort=name,asc&sort=price,desc
-```
-
-Here’s an improved version of your documentation section in English:
-
----
-
 ## Usage in HTTP Requests
 
 ### Pagination Parameters
@@ -303,6 +273,34 @@ public class YourEntityServiceImpl implements YourEntityService {
     }
 }
 ```
+
+### Using DTOs Generated from Entities
+
+If you want to **automatically generate DTOs** from your JPA entities, you can use the library [spring-query-swagger-processor](https://github.com/Zorin95670/spring-query-swagger-processor).
+
+This allows you to:
+
+* Avoid manually creating DTOs for filtering.
+* Directly map generated DTOs into the `SpringQueryFilterSpecification`.
+
+**Example:**
+
+```java
+import io.github.zorin95670.specification.SpringQueryFilterSpecification;
+
+// Suppose MyEntityDto is generated from MyEntity using spring-query-swagger-processor
+MyEntityDto dto1 = new MyEntityDto();
+MyEntityDto dto2 = new MyEntityDto();
+
+// Use the constructor that accepts DTOs
+SpringQueryFilterSpecification<MyEntity> spec =
+    new SpringQueryFilterSpecification<>(MyEntity.class, dto1, dto2);
+```
+
+**Notes:**
+
+* The constructor `SpringQueryFilterSpecification(Class<T> entityClass, Object... dtos)` will extract all `List<String>` fields from the DTOs and populate the internal filters map automatically.
+* This ensures that DTOs generated from your entities are **directly usable for filtering** without extra manual mapping.
 
 ## Custom Types
 

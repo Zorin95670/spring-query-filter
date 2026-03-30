@@ -152,14 +152,7 @@
                     <configLocation>${project.basedir}/checkstyle.xml</configLocation>
                 </configuration>
             </plugin>
-
-            <!-- SonarQube -->
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>5.0.0.4389</version>
-            </plugin>
-
+            
             <!-- Maven publisher -->
             <plugin>
                 <groupId>org.sonatype.central</groupId>
