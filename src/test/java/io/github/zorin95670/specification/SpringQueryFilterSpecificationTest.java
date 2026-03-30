@@ -9,12 +9,14 @@ import io.github.zorin95670.predicate.IntegerPredicateFilter;
 import io.github.zorin95670.predicate.LongPredicateFilter;
 import io.github.zorin95670.predicate.StringPredicateFilter;
 import io.github.zorin95670.predicate.UUIDPredicateFilter;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -29,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(classes = TestConfig.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class SpringQueryFilterSpecificationTest {
 
     @Autowired
@@ -37,7 +40,6 @@ class SpringQueryFilterSpecificationTest {
     MyEntity createEntity(int number, UUID uuid) {
         MyEntity entity = new MyEntity();
 
-        entity.setId((long) number);
         entity.setText("text" + number);
         entity.setDate(new Date(10L * number));
         entity.setUuid(uuid);
@@ -85,9 +87,11 @@ class SpringQueryFilterSpecificationTest {
     }
 
     @Test
+    @Transactional
     @DisplayName("should return all entities without filters")
     void testShouldReturnAllEntitiesWithoutFilters() {
         repository.deleteAll();
+        repository.flush();
 
         Map<String, List<String>> filters = new HashMap<>();
         var pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("text")));
@@ -119,9 +123,11 @@ class SpringQueryFilterSpecificationTest {
     }
 
     @Test
+    @Transactional
     @DisplayName("should return valid entities depend of pagination")
     void testShouldReturnValidEntitiesDependOfPagination() {
         repository.deleteAll();
+        repository.flush();
 
         UUID uuid1 = UUID.randomUUID();
         MyEntity entity1 = createEntity(1, uuid1);
@@ -170,9 +176,11 @@ class SpringQueryFilterSpecificationTest {
     }
 
     @Test
+    @Transactional
     @DisplayName("should return entity for specific filter")
     void testShouldSimpleFilter() {
         repository.deleteAll();
+        repository.flush();
 
         UUID uuid1 = UUID.randomUUID();
         MyEntity entity1 = createEntity(1, uuid1);
@@ -313,9 +321,11 @@ class SpringQueryFilterSpecificationTest {
     }
 
     @Test
+    @Transactional
     @DisplayName("should return all entities with specific date format")
     void testShouldReturnAllEntitiesWithDateFormat() throws ParseException {
         repository.deleteAll();
+        repository.flush();
 
         var sdf = new SimpleDateFormat("yyyy-MM-dd");
         Map<String, List<String>> filters = new HashMap<>();

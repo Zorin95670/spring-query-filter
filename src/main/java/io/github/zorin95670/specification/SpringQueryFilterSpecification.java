@@ -1,6 +1,7 @@
 package io.github.zorin95670.specification;
 
 import io.github.zorin95670.exception.SpringQueryFilterException;
+import io.github.zorin95670.mapper.DtoToFiltersMapper;
 import io.github.zorin95670.predicate.BooleanPredicateFilter;
 import io.github.zorin95670.predicate.DatePredicateFilter;
 import io.github.zorin95670.predicate.DoublePredicateFilter;
@@ -21,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -72,6 +74,26 @@ public class SpringQueryFilterSpecification<T> implements Specification<T> {
     public SpringQueryFilterSpecification(final Class<T> entityClass, final Map<String, List<String>> filters) {
         this.entityClass = entityClass;
         this.filters = filters;
+    }
+
+    /**
+     * Constructs a new specification by extracting filters from one or more DTOs.
+     * <p>
+     * Only fields of type {@link List} in the DTOs are considered. The extracted values are aggregated
+     * into the internal filters map.
+     * </p>
+     *
+     * @param entityClass the entity class to filter
+     * @param dtos one or more DTO objects from which to extract filter values
+     */
+    public SpringQueryFilterSpecification(final Class<T> entityClass, final Object... dtos) {
+        this(entityClass, new HashMap<>());
+
+        var mapper = new DtoToFiltersMapper(this.filters);
+
+        for (Object dto : dtos) {
+            mapper.toFilters(dto);
+        }
     }
 
     /**
