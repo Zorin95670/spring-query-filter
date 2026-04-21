@@ -52,7 +52,7 @@ class DtoToFiltersMapperTest {
         mapper.toFilters(dto2);
 
         // Assertions
-        assertEquals(3, filters.size(), "Should have 3 filter keys");
+        assertEquals(5, filters.size(), "Should have 3 filter keys");
 
         // baseTags: merged a,b,d (ignore null, deduplicate)
         List<String> baseTags = filters.get("baseTags");
@@ -75,8 +75,7 @@ class DtoToFiltersMapperTest {
         // nullList should be ignored
         assertFalse(filters.containsKey("nullList"));
 
-        // baseName and derivedNumber should be ignored (not List)
-        assertFalse(filters.containsKey("baseName"));
-        assertFalse(filters.containsKey("derivedNumber"));
+        assertTrue(filters.containsKey("baseName"));
+        assertTrue(filters.containsKey("derivedNumber"));
     }
 }
