@@ -39,6 +39,8 @@ public class DtoToFiltersMapper {
             for (Field field : clazz.getDeclaredFields()) {
                 if (isListField(field)) {
                     addFieldValues(dto, field);
+                } else {
+                    addFieldValue(dto, field);
                 }
             }
             clazz = clazz.getSuperclass();
@@ -87,6 +89,35 @@ public class DtoToFiltersMapper {
                     targetList.add(str);
                 }
             }
+        }
+    }
+
+    /**
+     * Add non-null item of the given DTO into the filters map under the field's name.
+     * Duplicate values are ignored.
+     *
+     * @param dto the DTO object containing the field
+     * @param field the List field to extract values from
+     */
+    private void addFieldValue(final Object dto, final Field field) {
+        field.setAccessible(true);
+        Object value = null;
+
+        try {
+            value = field.get(dto);
+        } catch (IllegalAccessException e) {
+            return;
+        }
+
+        if (value == null) {
+            return;
+        }
+
+        List<String> targetList = filters.computeIfAbsent(field.getName(), k -> new ArrayList<>());
+        String str = value.toString();
+
+        if (!targetList.contains(str)) {
+            targetList.add(str);
         }
     }
 }
