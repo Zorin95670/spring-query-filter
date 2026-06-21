@@ -1,0 +1,53 @@
+name: release.yml
+
+# Triggered when a PR is merged into main
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read version from pom.xml
+        id: read_version
+        run: |
+          VERSION=$(grep -m1 -oP '(?<=<version>)[^<]+(?=</version>)' pom.xml)
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read <version> from pom.xml"
+            exit 1
+          fi
+          echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          if git rev-parse "${{ steps.read_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.read_version.outputs.version }}" -m "Release ${{ steps.read_version.outputs.version }}"
+          git push origin "${{ steps.read_version.outputs.version }}"
+
+      - name: Skip notice
+        if: steps.check_tag.outputs.exists == 'true'
+        run: |
+          echo "::notice::Tag ${{ steps.read_version.outputs.version }} already exists, skipping."
