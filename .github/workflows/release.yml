@@ -28,7 +28,7 @@ jobs:
             echo "::error::Could not read <version> from pom.xml"
             exit 1
           fi
-          echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag already exists
         id: check_tag
