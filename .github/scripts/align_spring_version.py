@@ -50,8 +50,22 @@ def get_spring_boot_version(root: ET.Element) -> str:
     fail("Could not find org.springframework.boot:spring-boot-dependencies in dependencyManagement")
 
 
+def ensure_clean_release_version(version: str) -> None:
+    """
+    Ensures the Spring Boot version is a clean release version (e.g. 4.0.5),
+    rejecting milestones, release candidates, or snapshots
+    (e.g. 4.1.0-RC1, 4.1.0-M1, 4.1.0-SNAPSHOT).
+    """
+    if not re.match(r"^[0-9]+\.[0-9]+\.[0-9]+$", version):
+        fail(
+            f"Spring Boot version '{version}' is not a clean release version "
+            f"(expected format X.Y.Z). Refusing to align on a milestone, "
+            f"release candidate, or snapshot version."
+        )
+
+
 def major_minor(version: str) -> str:
-    """4.0.5 -> '4.0', 3.4.0-RC1 -> '3.4'."""
+    """4.0.5 -> '4.0'."""
     match = re.match(r"^(\d+)\.(\d+)", version)
     if not match:
         fail(f"Unexpected Spring Boot version: {version}")
@@ -104,6 +118,7 @@ def main() -> None:
 
     root = ET.fromstring(raw_pom)
     spring_version = get_spring_boot_version(root)
+    ensure_clean_release_version(spring_version)
     mm = major_minor(spring_version)
 
     compat_map = load_compat_map(compat_path)
