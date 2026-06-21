@@ -16,6 +16,7 @@ jobs:
           issue_number: ${{ github.event.number }}
 
   branch-naming-rules:
+    if: github.actor != 'dependabot[bot]'
     name: Check branch name
     runs-on: ubuntu-latest
     steps:
