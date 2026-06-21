@@ -1,4 +1,4 @@
-name: release.yml
+name: Release
 
 # Triggered when a PR is merged into main
 on:
@@ -10,12 +10,12 @@ permissions:
   contents: write
 
 jobs:
-  tag:
+  release:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
@@ -50,4 +50,35 @@ jobs:
       - name: Skip notice
         if: steps.check_tag.outputs.exists == 'true'
         run: |
-          echo "::notice::Tag ${{ steps.read_version.outputs.version }} already exists, skipping."
+          echo "::notice::Tag ${{ steps.read_version.outputs.version }} already exists, skipping tag creation and publish."
+
+      - name: Set up JDK 21
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Import GPG Key
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --no-tty --import
+          echo "no-tty" >> ~/.gnupg/gpg.conf
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Build and publish to Maven Central
+        if: steps.check_tag.outputs.exists == 'false'
+        run: mvn clean deploy -P release -DskipTests -s .github/maven-settings.xml
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.read_version.outputs.version }}
+          name: ${{ steps.read_version.outputs.version }}
+          generate_release_notes: true
