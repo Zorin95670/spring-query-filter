@@ -408,3 +408,245 @@ public class CustomQueryFilterSpecification<T> extends QueryFilterSpecification<
     }
 }
 ```
+
+---
+
+## Dynamic Projections and DISTINCT Queries
+
+The library provides a generic `SpringQueryExecutor` allowing you to execute JPA Criteria queries from a `Specification` while supporting:
+
+* Dynamic field projections
+* `SELECT DISTINCT`
+* Sorting
+* Pagination
+* DTO constructor projections
+
+### Injecting the Executor
+
+```java
+@Service
+@Transactional
+public class YourEntityServiceImpl implements YourEntityService {
+
+    private final SpringQueryExecutor queryExecutor;
+
+    public YourEntityServiceImpl(SpringQueryExecutor queryExecutor) {
+        this.queryExecutor = queryExecutor;
+    }
+}
+```
+
+---
+
+## Selecting a Single Field
+
+Retrieve only one attribute instead of the entire entity.
+
+```java
+List<String> names = queryExecutor.find(
+    YourEntity.class,
+    String.class,
+    new SpringQueryFilterSpecification<>(YourEntity.class, filters),
+    "name"
+);
+```
+
+Generated SQL:
+
+```sql
+SELECT name
+FROM your_entity_table
+WHERE ...
+```
+
+---
+
+## Selecting Distinct Values
+
+Retrieve unique values for a field.
+
+```java
+List<String> names = queryExecutor.findDistinct(
+    YourEntity.class,
+    String.class,
+    new SpringQueryFilterSpecification<>(YourEntity.class, filters),
+    "name"
+);
+```
+
+Generated SQL:
+
+```sql
+SELECT DISTINCT name
+FROM your_entity_table
+WHERE ...
+```
+
+---
+
+## Selecting Multiple Fields into a DTO
+
+When multiple fields are specified, the executor uses a JPA constructor expression.
+
+DTO:
+
+```java
+public record UserSummary(
+    String firstName,
+    String lastName
+) {}
+```
+
+Query:
+
+```java
+List<UserSummary> users = queryExecutor.find(
+    UserEntity.class,
+    UserSummary.class,
+    new SpringQueryFilterSpecification<>(UserEntity.class, filters),
+    "firstName",
+    "lastName"
+);
+```
+
+Generated SQL:
+
+```sql
+SELECT first_name, last_name
+FROM user_entity
+WHERE ...
+```
+
+### Constructor Requirements
+
+When projecting multiple fields:
+
+* the target class must expose a public constructor
+* constructor parameter order must match the order of `fieldNames`
+* constructor parameter types must match the selected field types
+
+For Java Records this works automatically.
+
+---
+
+## Sorting Results
+
+```java
+List<String> names = queryExecutor.find(
+    UserEntity.class,
+    String.class,
+    new SpringQueryFilterSpecification<>(UserEntity.class, filters),
+    Sort.by(Sort.Order.asc("name")),
+    "name"
+);
+```
+
+Generated SQL:
+
+```sql
+SELECT name
+FROM user_entity
+WHERE ...
+ORDER BY name ASC
+```
+
+---
+
+## Paginated Projections
+
+```java
+Page<UserSummary> page = queryExecutor.findPage(
+    UserEntity.class,
+    UserSummary.class,
+    new SpringQueryFilterSpecification<>(UserEntity.class, filters),
+    PageRequest.of(
+        0,
+        20,
+        Sort.by("lastName")
+    ),
+    "firstName",
+    "lastName"
+);
+```
+
+---
+
+## Distinct Paginated Queries
+
+```java
+Page<String> page = queryExecutor.findDistinctPage(
+    UserEntity.class,
+    String.class,
+    new SpringQueryFilterSpecification<>(UserEntity.class, filters),
+    PageRequest.of(0, 20),
+    "name"
+);
+```
+
+Generated SQL:
+
+```sql
+SELECT DISTINCT name
+FROM user_entity
+WHERE ...
+```
+
+The total count is computed using a dedicated `COUNT(DISTINCT ...)` query.
+
+---
+
+## Returning Entities
+
+If no field names are provided, the executor returns complete entities.
+
+```java
+List<UserEntity> users = queryExecutor.find(
+    UserEntity.class,
+    UserEntity.class,
+    new SpringQueryFilterSpecification<>(UserEntity.class, filters)
+);
+```
+
+Equivalent SQL:
+
+```sql
+SELECT *
+FROM user_entity
+WHERE ...
+```
+
+---
+
+## Combining with SpringQueryFilterSpecification
+
+The executor is designed to work naturally with `SpringQueryFilterSpecification`.
+
+```java
+Map<String, List<String>> filters = Map.of(
+    "name", List.of("lk_test%"),
+    "id", List.of("gt_10")
+);
+
+Specification<UserEntity> specification =
+    new SpringQueryFilterSpecification<>(
+        UserEntity.class,
+        filters
+    );
+
+List<String> names = queryExecutor.findDistinct(
+    UserEntity.class,
+    String.class,
+    specification,
+    "name"
+);
+```
+
+This produces a dynamic query equivalent to:
+
+```sql
+SELECT DISTINCT name
+FROM user_entity
+WHERE name LIKE 'test%'
+AND id > 10
+```
+
