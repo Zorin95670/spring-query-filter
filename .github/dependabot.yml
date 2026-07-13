@@ -4,12 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    allow:
-      - dependency-name: "org.springframework.boot:*"
-    groups:
-      spring-boot:
-        patterns:
-          - "org.springframework.boot:*"
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
