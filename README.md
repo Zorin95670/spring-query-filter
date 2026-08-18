@@ -9,6 +9,33 @@ This Java library directly converts HTTP query parameters into Hibernate predica
 - **Java 21** or later.
 - **Spring boot 3.X** for application configuration.
 - **spring-boot-starter-data-jpa** for entity management and filtering predicates.
+- **Consuming projects must compile with the `-parameters` javac flag** if they use the
+  constructor-based auto-projection methods (`findEntities`, `findDistinctEntities`,
+  `findPageEntities`, `findDistinctPageEntities` — see
+  [Constructor-Based Auto Projections](#constructor-based-auto-projections)). Without it,
+  these methods throw `IllegalStateException: Parameter names not available`.
+
+  **Maven** (`pom.xml`):
+```xml
+  <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+          <parameters>true</parameters>
+      </configuration>
+  </plugin>
+```
+
+**Gradle** (`build.gradle`):
+```groovy
+  tasks.withType(JavaCompile) {
+      options.compilerArgs << '-parameters'
+  }
+```
+
+This flag only needs to be applied to the module(s) declaring your projection DTOs —
+it must recompile the DTO for the change to take effect (a `clean` build is required
+after enabling it for the first time).
 
 ### Adding the Dependency
 
@@ -517,6 +544,8 @@ FROM user_entity
 WHERE ...
 ```
 
+---
+
 ### Constructor Requirements
 
 When projecting multiple fields:
@@ -526,6 +555,81 @@ When projecting multiple fields:
 * constructor parameter types must match the selected field types
 
 For Java Records this works automatically.
+
+> **Tip:** manually keeping `fieldNames` in sync with the constructor order is error-prone.
+> See [Constructor-Based Auto Projections](#constructor-based-auto-projections) for a way to
+> derive `fieldNames` automatically from the target class's constructor instead.
+
+
+## Constructor-Based Auto Projections
+
+For DTO projections, manually listing `fieldNames` in the exact constructor order is
+error-prone — especially when the DTO's field order doesn't match the entity's. The
+`*Entities`-suffixed methods (`findEntities`, `findDistinctEntities`, `findPageEntities`,
+`findDistinctPageEntities`) remove this burden entirely: instead of taking `fieldNames`,
+they derive the projected field list directly from the `resultType`'s constructor via
+reflection.
+
+```java
+public record UserSummary(
+    String firstName,
+    String lastName
+) {}
+
+List<UserSummary> users = queryExecutor.findEntities(
+    UserEntity.class,
+    UserSummary.class,
+    new SpringQueryFilterSpecification<>(UserEntity.class, filters)
+);
+```
+
+This is equivalent to calling `find(UserEntity.class, UserSummary.class, specification,
+"firstName", "lastName")`, but the field list is read from `UserSummary`'s constructor
+instead of being typed out by hand — so it can never drift out of sync with the DTO.
+
+Sorted, paginated, and distinct variants follow the same naming convention as their
+`fieldNames`-based counterparts:
+
+```java
+// Sorted
+List<UserSummary> users = queryExecutor.findEntities(
+    UserEntity.class, UserSummary.class, specification, Sort.by("lastName"));
+
+// Distinct
+List<UserSummary> users = queryExecutor.findDistinctEntities(
+    UserEntity.class, UserSummary.class, specification);
+
+// Paginated
+Page<UserSummary> page = queryExecutor.findPageEntities(
+    UserEntity.class, UserSummary.class, specification, PageRequest.of(0, 20));
+
+// Distinct + paginated
+Page<UserSummary> page = queryExecutor.findDistinctPageEntities(
+    UserEntity.class, UserSummary.class, specification, PageRequest.of(0, 20));
+```
+
+### Constructor Resolution Rules
+
+* `resultType` must declare **exactly one constructor with parameters** having the
+  **highest parameter count** among its declared constructors. If several Lombok-generated
+  constructors coexist (e.g. `@AllArgsConstructor` alongside `@SuperBuilder`'s internal
+  builder-accepting constructor), the one with the most parameters is selected automatically
+  — so `@SuperBuilder` can be used freely alongside `@AllArgsConstructor` without conflict.
+* Parameter names must be available at runtime, which requires compiling `resultType` with
+  the `-parameters` javac flag (see [Requirements](#requirements)).
+* Avoid non-`static` local or inner classes as `resultType` (e.g. a class declared inside a
+  method or as a non-static nested class): the compiler silently adds a synthetic
+  constructor parameter capturing the enclosing instance, which breaks field resolution.
+  Top-level classes, `static` nested classes, and Java records are all safe.
+
+### DISTINCT + Sorting Caveat
+
+When using a `findDistinct*`/`*DistinctPage*` variant together with a `Sort` (explicit or
+via `Pageable`), every sorted property must also be part of the projection. This is a
+PostgreSQL (and most SQL databases) requirement: `ORDER BY` expressions must appear in the
+`SELECT DISTINCT` list, since sorting by a column excluded from the projection is ambiguous
+once rows are deduplicated. Sorting by a non-projected field will fail at the database level
+(e.g. `PSQLException: for SELECT DISTINCT, ORDER BY expressions must appear in select list`).
 
 ---
 

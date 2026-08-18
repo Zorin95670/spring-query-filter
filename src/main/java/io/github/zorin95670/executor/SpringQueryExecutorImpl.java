@@ -12,6 +12,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Selection;
 import jakarta.persistence.criteria.Order;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +52,13 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
     }
 
     @Override
+    public <T, R> List<R> findEntities(final @NonNull Class<T> entityClass,
+                                       final @NonNull Class<R> resultType,
+                                       final @NonNull Specification<T> specification) {
+        return findEntities(entityClass, resultType, specification, Sort.unsorted());
+    }
+
+    @Override
     public <T, R> List<R> find(final @Nonnull Class<T> entityClass,
                                final @Nonnull Class<R> resultType,
                                final @Nonnull Specification<T> specification,
@@ -61,6 +71,13 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
                                        final @Nonnull Class<R> resultType,
                                        final @Nonnull Specification<T> specification) {
         return findDistinct(entityClass, resultType, specification, Sort.unsorted());
+    }
+
+    @Override
+    public <T, R> List<R> findDistinctEntities(final @NonNull Class<T> entityClass,
+                                               final @NonNull Class<R> resultType,
+                                               final @NonNull Specification<T> specification) {
+        return findDistinctEntities(entityClass, resultType, specification, Sort.unsorted());
     }
 
     @Override
@@ -78,6 +95,15 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
                                final @Nonnull Sort sort) {
         return buildTypedQuery(entityClass, resultType, specification, false, sort, getFieldNames(resultType))
             .getResultList();
+    }
+
+    @Override
+    public <T, R> List<R> findEntities(final @NonNull Class<T> entityClass,
+                                       final @NonNull Class<R> resultType,
+                                       final @NonNull Specification<T> specification,
+                                       final @NonNull Sort sort) {
+        return buildTypedQuery(entityClass, resultType, specification, false, sort,
+            getConstructorFieldNames(resultType)).getResultList();
     }
 
     @Override
@@ -100,6 +126,15 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
     }
 
     @Override
+    public <T, R> List<R> findDistinctEntities(final @NonNull Class<T> entityClass,
+                                               final @NonNull Class<R> resultType,
+                                               final @NonNull Specification<T> specification,
+                                               final @NonNull Sort sort) {
+        return buildTypedQuery(entityClass, resultType, specification, true, sort, getConstructorFieldNames(resultType))
+            .getResultList();
+    }
+
+    @Override
     public <T, R> List<R> findDistinct(final @Nonnull Class<T> entityClass,
                                        final @Nonnull Class<R> resultType,
                                        final @Nonnull Specification<T> specification,
@@ -118,6 +153,14 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
     }
 
     @Override
+    public <T, R> Page<R> findPageEntities(final @NonNull Class<T> entityClass,
+                                           final @NonNull Class<R> resultType,
+                                           final @NonNull Specification<T> specification,
+                                           final @NonNull Pageable pageable) {
+        return buildPage(entityClass, resultType, specification, false, pageable, getConstructorFieldNames(resultType));
+    }
+
+    @Override
     public <T, R> Page<R> findPage(final @Nonnull Class<T> entityClass,
                                    final @Nonnull Class<R> resultType,
                                    final @Nonnull Specification<T> specification,
@@ -132,6 +175,15 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
                                            final @Nonnull Specification<T> specification,
                                            final @Nonnull Pageable pageable) {
         return buildPage(entityClass, resultType, specification, true, pageable, getFieldNames(resultType));
+    }
+
+    @Override
+    public <T, R> Page<R> findDistinctPageEntities(final @NonNull Class<T> entityClass,
+                                                   final @NonNull Class<R> resultType,
+                                                   final @NonNull Specification<T> specification,
+                                                   final @NonNull Pageable pageable) {
+        return buildPage(entityClass, resultType, specification, true, pageable,
+            getConstructorFieldNames(resultType));
     }
 
     @Override
@@ -516,5 +568,64 @@ public class SpringQueryExecutorImpl implements SpringQueryExecutor {
         }
 
         return fieldNames.toArray(new String[0]);
+    }
+
+    /**
+     * Retrieves the field names to project onto {@code resultType}, derived from the parameter
+     * names of its unique multi-argument constructor.
+     *
+     * <p>Unlike {@link #getFieldNames}, this does not walk the class hierarchy and does not rely
+     * on field declaration order: it reads the actual constructor Hibernate will invoke via
+     * {@link CriteriaBuilder#construct}, so the returned order is guaranteed to match that
+     * constructor exactly. This is the recommended way to design a projection DTO — its
+     * constructor signature <em>is</em> the projection contract.</p>
+     *
+     * <p>{@code resultType} must declare exactly one constructor with one or more parameters
+     * (a no-argument constructor, e.g. from Lombok's {@code @NoArgsConstructor}, is ignored if a
+     * multi-argument one is also present — this is the common Lombok
+     * {@code @NoArgsConstructor @AllArgsConstructor} pairing). {@code resultType} must be compiled
+     * with the {@code -parameters} javac flag so that {@link Parameter#getName()} reflects real
+     * parameter names instead of synthetic {@code arg0}, {@code arg1}, etc.</p>
+     *
+     * @param resultType the projection class whose constructor should be introspected
+     * @param <R>        the result type
+     * @return the field names in the exact order expected by {@code resultType}'s constructor
+     * @throws IllegalStateException if no constructor with parameters exists, if more than one
+     *                                constructor with parameters exists (ambiguous resolution), or
+     *                                if parameter names are unavailable (missing {@code -parameters}
+     *                                compiler flag)
+     */
+    public <R> String[] getConstructorFieldNames(final @Nonnull Class<R> resultType) {
+        List<Constructor<?>> candidates = Arrays.stream(resultType.getDeclaredConstructors())
+            .filter(c -> c.getParameterCount() > 0)
+            .toList();
+
+        if (candidates.isEmpty()) {
+            throw new IllegalStateException(
+                "No constructor with parameters found on " + resultType.getName());
+        }
+
+        int maxParams = candidates.stream()
+            .mapToInt(Constructor::getParameterCount)
+            .max()
+            .orElseThrow();
+
+        List<Constructor<?>> widest = candidates.stream()
+            .filter(c -> c.getParameterCount() == maxParams)
+            .toList();
+
+        Parameter[] parameters = widest.getFirst().getParameters();
+        String[] fieldNames = new String[parameters.length];
+
+        for (int i = 0; i < parameters.length; i++) {
+            if (!parameters[i].isNamePresent()) {
+                throw new IllegalStateException(
+                    "Parameter names not available for " + resultType.getName()
+                        + "; compile with the -parameters javac flag");
+            }
+            fieldNames[i] = parameters[i].getName();
+        }
+
+        return fieldNames;
     }
 }

@@ -11,6 +11,7 @@ module io.github.zorin95670 {
     requires spring.context;
     requires jakarta.annotation;
     requires spring.boot.autoconfigure;
+    requires org.jspecify;
 
     opens io.github.zorin95670.specification;
     opens io.github.zorin95670.executor;

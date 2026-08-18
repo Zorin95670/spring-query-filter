@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,6 +73,26 @@ class SpringQueryExecutorImplTest {
         @Override
         public int hashCode() {
             return Objects.hash(text, numberInteger);
+        }
+    }
+
+    static class NoArgsOnly {
+        NoArgsOnly() {
+        }
+    }
+
+    static class Widened {
+        private final String text;
+        private final Integer numberInteger;
+
+        Widened(String single) {
+            this.text = single;
+            this.numberInteger = null;
+        }
+
+        Widened(String text, Integer numberInteger) {
+            this.text = text;
+            this.numberInteger = numberInteger;
         }
     }
 
@@ -456,5 +478,216 @@ class SpringQueryExecutorImplTest {
         List<String> results = query.getResultList();
 
         assertEquals(List.of("text1", "text2"), results);
+    }
+
+    // ------------------------------------------------------------------
+    // getConstructorFieldNames
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Test getConstructorFieldNames: should return parameter names in constructor order")
+    void testGetConstructorFieldNamesReturnsConstructorParameterOrder() {
+        String[] fieldNames = executor.getConstructorFieldNames(TextNumberProjection.class);
+
+        assertNotNull(fieldNames);
+        assertEquals(List.of("text", "numberInteger"), List.of(fieldNames));
+    }
+
+    @Test
+    @DisplayName("Test getConstructorFieldNames: should throw when no constructor with parameters exists")
+    void testGetConstructorFieldNamesThrowsWhenNoArgsConstructorOnly() {
+        InvalidDataAccessApiUsageException exception = assertThrows(
+            InvalidDataAccessApiUsageException.class,
+            () -> executor.getConstructorFieldNames(NoArgsOnly.class));
+
+        assertNotNull(exception.getCause());
+        assertInstanceOf(IllegalStateException.class, exception.getCause());
+        assertTrue(exception.getCause().getMessage().contains("No constructor with parameters"));
+    }
+
+    @Test
+    @DisplayName("Test getConstructorFieldNames: should pick the constructor with the most parameters "
+        + "when a narrower one also exists (e.g. builder-style constructor)")
+    void testGetConstructorFieldNamesPicksWidestConstructor() {
+        String[] fieldNames = executor.getConstructorFieldNames(Widened.class);
+
+        assertNotNull(fieldNames);
+        assertEquals(List.of("text", "numberInteger"), List.of(fieldNames));
+    }
+
+    // ------------------------------------------------------------------
+    // findEntities / findEntities (Sort)
+    // ------------------------------------------------------------------
+
+    @Test
+    @Transactional
+    @DisplayName("Test findEntities: should derive the projection from the resultType constructor")
+    void testFindEntities() {
+        repository.deleteAll();
+        repository.flush();
+
+        repository.save(createEntity(1, UUID.randomUUID()));
+        repository.save(createEntity(2, UUID.randomUUID()));
+
+        List<TextNumberProjection> results = executor.findEntities(
+            MyEntity.class, TextNumberProjection.class, noFilterSpecification());
+
+        assertNotNull(results);
+        assertEquals(2, results.size());
+        assertTrue(results.contains(new TextNumberProjection("text1", 100)));
+        assertTrue(results.contains(new TextNumberProjection("text2", 200)));
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Test findEntities with Sort: should return sorted, constructor-projected results")
+    void testFindEntitiesWithSort() {
+        repository.deleteAll();
+        repository.flush();
+
+        repository.save(createEntity(2, UUID.randomUUID()));
+        repository.save(createEntity(1, UUID.randomUUID()));
+
+        List<TextNumberProjection> results = executor.findEntities(
+            MyEntity.class,
+            TextNumberProjection.class,
+            noFilterSpecification(),
+            Sort.by(Sort.Order.asc("text")));
+
+        assertNotNull(results);
+        assertEquals(
+            List.of(new TextNumberProjection("text1", 100), new TextNumberProjection("text2", 200)),
+            results);
+    }
+
+    // ------------------------------------------------------------------
+    // findDistinctEntities / findDistinctEntities (Sort)
+    // ------------------------------------------------------------------
+
+    @Test
+    @Transactional
+    @DisplayName("Test findDistinctEntities: should deduplicate constructor-projected combinations")
+    void testFindDistinctEntities() {
+        repository.deleteAll();
+        repository.flush();
+
+        MyEntity entity1 = createEntity(1, UUID.randomUUID());
+        entity1.setText("same");
+        entity1.setNumberInteger(100);
+        repository.save(entity1);
+
+        MyEntity entity2 = createEntity(2, UUID.randomUUID());
+        entity2.setText("same");
+        entity2.setNumberInteger(100);
+        repository.save(entity2);
+
+        MyEntity entity3 = createEntity(3, UUID.randomUUID());
+        entity3.setText("same");
+        entity3.setNumberInteger(999);
+        repository.save(entity3);
+
+        List<TextNumberProjection> results = executor.findDistinctEntities(
+            MyEntity.class, TextNumberProjection.class, noFilterSpecification());
+
+        assertNotNull(results);
+        assertEquals(2, results.size());
+        assertTrue(results.contains(new TextNumberProjection("same", 100)));
+        assertTrue(results.contains(new TextNumberProjection("same", 999)));
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Test findDistinctEntities with Sort: should return sorted, deduplicated, "
+        + "constructor-projected results")
+    void testFindDistinctEntitiesWithSort() {
+        repository.deleteAll();
+        repository.flush();
+
+        MyEntity entity1 = createEntity(1, UUID.randomUUID());
+        entity1.setText("same");
+        entity1.setNumberInteger(100);
+        repository.save(entity1);
+
+        MyEntity entity2 = createEntity(2, UUID.randomUUID());
+        entity2.setText("same");
+        entity2.setNumberInteger(100);
+        repository.save(entity2);
+
+        MyEntity entity3 = createEntity(3, UUID.randomUUID());
+        entity3.setText("other");
+        entity3.setNumberInteger(999);
+        repository.save(entity3);
+
+        List<TextNumberProjection> results = executor.findDistinctEntities(
+            MyEntity.class,
+            TextNumberProjection.class,
+            noFilterSpecification(),
+            Sort.by(Sort.Order.asc("text")));
+
+        assertNotNull(results);
+        assertEquals(
+            List.of(new TextNumberProjection("other", 999), new TextNumberProjection("same", 100)),
+            results);
+    }
+
+    // ------------------------------------------------------------------
+    // findPageEntities / findDistinctPageEntities
+    // ------------------------------------------------------------------
+
+    @Test
+    @Transactional
+    @DisplayName("Test findPageEntities: should return a Page projected via the resultType constructor")
+    void testFindPageEntities() {
+        repository.deleteAll();
+        repository.flush();
+
+        repository.save(createEntity(1, UUID.randomUUID()));
+        repository.save(createEntity(2, UUID.randomUUID()));
+        repository.save(createEntity(3, UUID.randomUUID()));
+
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Order.asc("text")));
+
+        Page<TextNumberProjection> page = executor.findPageEntities(
+            MyEntity.class, TextNumberProjection.class, noFilterSpecification(), pageable);
+
+        assertNotNull(page);
+        assertEquals(2, page.getContent().size());
+        assertEquals(3, page.getTotalElements());
+        assertEquals(
+            List.of(new TextNumberProjection("text1", 100), new TextNumberProjection("text2", 200)),
+            page.getContent());
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Test findDistinctPageEntities: should deduplicate constructor-projected rows "
+        + "and compute a consistent total")
+    void testFindDistinctPageEntities() {
+        repository.deleteAll();
+        repository.flush();
+
+        MyEntity entity1 = createEntity(1, UUID.randomUUID());
+        entity1.setText("same");
+        entity1.setNumberInteger(100);
+        repository.save(entity1);
+
+        MyEntity entity2 = createEntity(2, UUID.randomUUID());
+        entity2.setText("same");
+        entity2.setNumberInteger(100);
+        repository.save(entity2);
+
+        MyEntity entity3 = createEntity(3, UUID.randomUUID());
+        entity3.setText("same");
+        entity3.setNumberInteger(999);
+        repository.save(entity3);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<TextNumberProjection> page = executor.findDistinctPageEntities(
+            MyEntity.class, TextNumberProjection.class, noFilterSpecification(), pageable);
+
+        assertNotNull(page);
+        assertEquals(2, page.getTotalElements());
+        assertEquals(2, page.getContent().size());
     }
 }
