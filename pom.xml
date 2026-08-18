@@ -6,7 +6,7 @@
 
     <groupId>io.github.zorin95670</groupId>
     <artifactId>spring-query-filter</artifactId>
-    <version>4.2.1</version>
+    <version>4.3.0</version>
     <packaging>jar</packaging>
 
     <name>spring-query-filter</name>
